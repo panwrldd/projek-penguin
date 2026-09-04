@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Penguin AI — Species Predictor</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #38bdf8;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: rgba(148, 163, 184, 0.25);
+            --glass: rgba(255, 255, 255, 0.72);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+
+            background:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.25), transparent 30%),
+                radial-gradient(circle at 90% 10%, rgba(37, 99, 235, 0.20), transparent 30%),
+                radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.18), transparent 35%),
+                linear-gradient(135deg, #eff6ff, #f8fafc 50%, #e0f2fe);
+        }
+
+        /* =========================
+           BACKGROUND ANIMATION
+        ========================= */
+
+        .background {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(2px);
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .bubble:nth-child(1) {
+            width: 100px;
+            height: 100px;
+            left: 5%;
+            top: 20%;
+        }
+
+        .bubble:nth-child(2) {
+            width: 55px;
+            height: 55px;
+            right: 12%;
+            top: 30%;
+            animation-delay: 2s;
+        }
+
+        .bubble:nth-child(3) {
+            width: 80px;
+            height: 80px;
+            left: 18%;
+            bottom: 8%;
+            animation-delay: 4s;
+        }
+
+        .bubble:nth-child(4) {
+            width: 45px;
+            height: 45px;
+            right: 25%;
+            bottom: 15%;
+            animation-delay: 1s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-30px) rotate(10deg);
+            }
+        }
+
+        /* =========================
+           MAIN
+        ========================= */
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 1050px;
+
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(25px);
+
+            border-radius: 32px;
+
+            box-shadow:
+                0 30px 80px rgba(15, 23, 42, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+            overflow: hidden;
+
+            animation: appear 0.8s ease;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(25px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* =========================
+           LEFT SIDE
+        ========================= */
+
+        .hero {
+            position: relative;
+            padding: 55px 45px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(37, 99, 235, 0.95),
+                    rgba(14, 165, 233, 0.88)
+                );
+
+            color: white;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            top: -150px;
+            right: -130px;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            bottom: -120px;
+            left: -100px;
+        }
+
+        .penguin {
+            font-size: 110px;
+            text-align: center;
+
+            filter: drop-shadow(0 15px 10px rgba(0, 0, 0, 0.15));
+
+            animation: penguinFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes penguinFloat {
+            0%, 100% {
+                transform: translateY(0) rotate(-2deg);
+            }
+
+            50% {
+                transform: translateY(-12px) rotate(2deg);
+            }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+
+            padding: 8px 13px;
+            border-radius: 50px;
+
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+
+            font-size: 12px;
+            font-weight: 600;
+
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 38px;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            margin-bottom: 16px;
+        }
+
+        .hero p {
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .features {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .feature-icon {
+            width: 30px;
+            height: 30px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        /* =========================
+           FORM SIDE
+        ========================= */
+
+        .form-section {
+            padding: 45px;
+            background: rgba(255, 255, 255, 0.48);
+        }
+
+        .form-header {
+            margin-bottom: 28px;
+        }
+
+        .form-header span {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .form-header h2 {
+            font-size: 27px;
+            margin-top: 7px;
+            letter-spacing: -0.7px;
+        }
+
+        .form-header p {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 7px;
+        }
+
+        /* =========================
+           PROGRESS
+        ========================= */
+
+        .progress-container {
+            margin-bottom: 25px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .progress-bar {
+            height: 5px;
+            width: 100%;
+
+            border-radius: 50px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            width: 0%;
+
+            border-radius: 50px;
+
+            background: linear-gradient(
+                90deg,
+                var(--primary),
+                var(--secondary)
+            );
+
+            transition: width 0.35s ease;
+        }
+
+        /* =========================
+           INPUT
+        ========================= */
+
+        .form-group {
+            margin-bottom: 17px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 7px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .unit {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            height: 50px;
+
+            border: 1px solid #dbe3ef;
+            border-radius: 13px;
+
+            background: rgba(255, 255, 255, 0.85);
+
+            padding: 0 15px;
+
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+
+            color: var(--text);
+
+            outline: none;
+
+            transition:
+                border 0.25s,
+                box-shadow 0.25s,
+                transform 0.2s;
+        }
+
+        input:hover {
+            border-color: #b9c8dc;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+
+            box-shadow:
+                0 0 0 4px rgba(37, 99, 235, 0.10),
+                0 8px 20px rgba(37, 99, 235, 0.08);
+
+            transform: translateY(-1px);
+        }
+
+        /* Remove number arrows */
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        /* =========================
+           EXAMPLE BUTTONS
+        ========================= */
+
+        .examples {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+
+            margin-top: 3px;
+            margin-bottom: 22px;
+        }
+
+        .examples-title {
+            font-size: 11px;
+            color: var(--muted);
+            margin-right: 3px;
+        }
+
+        .example-btn {
+            border: 1px solid #dbe3ef;
+            background: white;
+
+            padding: 6px 10px;
+            border-radius: 8px;
+
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 600;
+
+            color: #475569;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .example-btn:hover {
+            background: #eff6ff;
+            color: var(--primary);
+            border-color: #bfdbfe;
+            transform: translateY(-1px);
+        }
+
+        /* =========================
+           BUTTON
+        ========================= */
+
+        .predict-btn {
+            position: relative;
+
+            width: 100%;
+            height: 53px;
+
+            border: none;
+            border-radius: 14px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--primary),
+                    #0ea5e9
+                );
+
+            color: white;
+
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 10px 25px rgba(37, 99, 235, 0.25);
+
+            transition:
+                transform 0.2s,
+                box-shadow 0.2s;
+        }
+
+        .predict-btn:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 15px 30px rgba(37, 99, 235, 0.32);
+        }
+
+        .predict-btn:active {
+            transform: translateY(0);
+        }
+
+        .predict-btn::before {
+            content: "";
+            position: absolute;
+
+            top: 0;
+            left: -100%;
+
+            width: 100%;
+            height: 100%;
+
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.25),
+                transparent
+            );
+
+            transition: 0.6s;
+        }
+
+        .predict-btn:hover::before {
+            left: 100%;
+        }
+
+        .button-content {
+            position: relative;
+            z-index: 2;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .loader {
+            display: none;
+
+            width: 17px;
+            height: 17px;
+
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-top-color: white;
+
+            border-radius: 50%;
+
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* =========================
+           RESULT
+        ========================= */
+
+        #result {
+            display: none;
+
+            margin-top: 20px;
+
+            padding: 20px;
+
+            border-radius: 16px;
+
+            text-align: center;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(239, 246, 255, 0.9),
+                    rgba(224, 242, 254, 0.9)
+                );
+
+            border: 1px solid #bfdbfe;
+
+            animation: resultAppear 0.5s ease;
+        }
+
+        @keyframes resultAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .result-icon {
+            font-size: 35px;
+            margin-bottom: 7px;
+        }
+
+        .result-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .result-species {
+            font-size: 25px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-top: 5px;
+        }
+
+        .result-description {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        .footer strong {
+            color: #64748b;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 850px) {
+            .wrapper {
+                grid-template-columns: 1fr;
+                max-width: 600px;
+            }
+
+            .hero {
+                padding: 40px;
+                text-align: center;
+            }
+
+            .penguin {
+                font-size: 80px;
+            }
+
+            .features {
+                align-items: center;
+            }
+
+            .feature {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .page {
+                padding: 15px;
+            }
+
+            .hero,
+            .form-section {
+                padding: 30px 23px;
+            }
+
+            .hero h1 {
+                font-size: 30px;
+            }
+
+            .form-header h2 {
+                font-size: 23px;
+            }
+
+            .wrapper {
+                border-radius: 23px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background -->
+    <div class="background">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+
+    <main class="page">
+
+        <div class="wrapper">
+
+            <!-- =========================
+                 HERO
+            ========================== -->
+
+            <section class="hero">
+
+                <div class="hero-content">
+
+                    <div class="penguin">
+                        🐧
+                    </div>
+
+                    <div class="badge">
+                        ✨ AI POWERED • KNN
+                    </div>
+
+                    <h1>
+                        Kenali Spesies Penguin
+                        dengan AI
+                    </h1>
+
+                    <p>
+                        Masukkan ukuran fisik penguin dan biarkan
+                        Machine Learning menganalisis karakteristiknya
+                        untuk memprediksi spesies.
+                    </p>
+
+                    <div class="features">
+
+                        <div class="feature">
+                            <div class="feature-icon">🧠</div>
+                            <span>Algoritma K-Nearest Neighbors</span>
+                        </div>
+
+                        <div class="feature">
+                            <div class="feature-icon">⚡</div>
+                            <span>Prediksi secara langsung</span>
+                        </div>
+
+                        <div class="feature">
+                            <div class="feature-icon">🎯</div>
+                            <span>Berbasis data ukuran penguin</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =========================
+                 FORM
+            ========================== -->
+
+            <section class="form-section">
+
+                <div class="form-header">
+
+                    <span>Penguin Analyzer</span>
+
+                    <h2>
+                        Masukkan Data Penguin
+                    </h2>
+
+                    <p>
+                        Isi semua parameter untuk mendapatkan hasil prediksi.
+                    </p>
+
+                </div>
+
+
+                <!-- Progress -->
+
+                <div class="progress-container">
+
+                    <div class="progress-info">
+                        <span>Progress pengisian</span>
+                        <span id="progressText">0%</span>
+                    </div>
+
+                    <div class="progress-bar">
+                        <div
+                            class="progress"
+                            id="progress"
+                        ></div>
+                    </div>
+
+                </div>
+
+
+                <form id="predictionForm">
+
+                    <!-- Bill Length -->
+
+                    <div class="form-group">
+
+                        <div class="label-row">
+                            <label for="bill_length_mm">
+                                Panjang Paruh
+                            </label>
+
+                            <span class="unit">
+                                millimeter
+                            </span>
+                        </div>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                type="number"
+                                id="bill_length_mm"
+                                step="0.1"
+                                min="0"
+                                placeholder="Contoh: 39.1"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Bill Depth -->
+
+                    <div class="form-group">
+
+                        <div class="label-row">
+                            <label for="bill_depth_mm">
+                                Kedalaman Paruh
+                            </label>
+
+                            <span class="unit">
+                                millimeter
+                            </span>
+                        </div>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                type="number"
+                                id="bill_depth_mm"
+                                step="0.1"
+                                min="0"
+                                placeholder="Contoh: 18.7"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Flipper -->
+
+                    <div class="form-group">
+
+                        <div class="label-row">
+                            <label for="flipper_length_mm">
+                                Panjang Sirip
+                            </label>
+
+                            <span class="unit">
+                                millimeter
+                            </span>
+                        </div>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                type="number"
+                                id="flipper_length_mm"
+                                step="1"
+                                min="0"
+                                placeholder="Contoh: 181"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Body Mass -->
+
+                    <div class="form-group">
+
+                        <div class="label-row">
+                            <label for="body_mass_g">
+                                Berat Badan
+                            </label>
+
+                            <span class="unit">
+                                gram
+                            </span>
+                        </div>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                type="number"
+                                id="body_mass_g"
+                                step="1"
+                                min="0"
+                                placeholder="Contoh: 3750"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Examples -->
+
+                    <div class="examples">
+
+                        <span class="examples-title">
+                            Coba contoh:
+                        </span>
+
+                        <button
+                            type="button"
+                            class="example-btn"
+                            onclick="setExample()"
+                        >
+                            🐧 Adelie
+                        </button>
+
+                        <button
+                            type="button"
+                            class="example-btn"
+                            onclick="setGentoo()"
+                        >
+                            🐧 Gentoo
+                        </button>
+
+                    </div>
+
+
+                    <!-- Button -->
+
+                    <button
+                        type="submit"
+                        class="predict-btn"
+                        id="predictButton"
+                    >
+
+                        <div class="button-content">
+
+                            <span id="buttonText">
+                                🔍 Prediksi Spesies
+                            </span>
+
+                            <div
+                                class="loader"
+                                id="loader"
+                            ></div>
+
+                        </div>
+
+                    </button>
+
+                </form>
+
+
+                <!-- Result -->
+
+                <div id="result">
+
+                    <div class="result-icon">
+                        🐧
+                    </div>
+
+                    <div class="result-label">
+                        Hasil Analisis AI
+                    </div>
+
+                    <div
+                        class="result-species"
+                        id="resultSpecies"
+                    >
+                        -
+                    </div>
+
+                    <div
+                        class="result-description"
+                        id="resultDescription"
+                    >
+                        Prediksi berhasil dilakukan.
+                    </div>
+
+                </div>
+
+
+                <div class="footer">
+                    Powered by <strong>K-Nearest Neighbors</strong> •
+                    Machine Learning
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        /* =========================
+           ELEMENTS
+        ========================== */
+
+        const form = document.getElementById("predictionForm");
+
+        const inputs = [
+            document.getElementById("bill_length_mm"),
+            document.getElementById("bill_depth_mm"),
+            document.getElementById("flipper_length_mm"),
+            document.getElementById("body_mass_g")
+        ];
+
+        const progress = document.getElementById("progress");
+        const progressText = document.getElementById("progressText");
+
+        const result = document.getElementById("result");
+        const resultSpecies = document.getElementById("resultSpecies");
+        const resultDescription = document.getElementById("resultDescription");
+
+        const button = document.getElementById("predictButton");
+        const buttonText = document.getElementById("buttonText");
+        const loader = document.getElementById("loader");
+
+
+        /* =========================
+           PROGRESS BAR
+        ========================== */
+
+        function updateProgress() {
+
+            let filled = 0;
+
+            inputs.forEach(input => {
+
+                if (input.value.trim() !== "") {
+                    filled++;
+                }
+
+            });
+
+            const percent = (filled / inputs.length) * 100;
+
+            progress.style.width = percent + "%";
+
+            progressText.textContent =
+                Math.round(percent) + "%";
+        }
+
+
+        inputs.forEach(input => {
+
+            input.addEventListener(
+                "input",
+                updateProgress
+            );
+
+        });
+
+
+        /* =========================
+           EXAMPLE DATA
+        ========================== */
+
+        function setExample() {
+
+            document.getElementById("bill_length_mm").value = "39.1";
+            document.getElementById("bill_depth_mm").value = "18.7";
+            document.getElementById("flipper_length_mm").value = "181";
+            document.getElementById("body_mass_g").value = "3750";
+
+            updateProgress();
+
+            result.style.display = "none";
+
+        }
+
+
+        function setGentoo() {
+
+            document.getElementById("bill_length_mm").value = "50.0";
+            document.getElementById("bill_depth_mm").value = "16.3";
+            document.getElementById("flipper_length_mm").value = "230";
+            document.getElementById("body_mass_g").value = "5700";
+
+            updateProgress();
+
+            result.style.display = "none";
+
+        }
+
+
+        /* =========================
+           PREDICTION
+        ========================== */
+
+        form.addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+
+                const data = {
+
+                    bill_length_mm:
+                        document.getElementById(
+                            "bill_length_mm"
+                        ).value,
+
+                    bill_depth_mm:
+                        document.getElementById(
+                            "bill_depth_mm"
+                        ).value,
+
+                    flipper_length_mm:
+                        document.getElementById(
+                            "flipper_length_mm"
+                        ).value,
+
+                    body_mass_g:
+                        document.getElementById(
+                            "body_mass_g"
+                        ).value
+
+                };
+
+
+                /* Loading */
+
+                button.disabled = true;
+
+                buttonText.textContent =
+                    "Menganalisis data...";
+
+                loader.style.display =
+                    "block";
+
+
+                result.style.display =
+                    "none";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/predict",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify(data)
+                            }
+                        );
+
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Server error"
+                        );
+                    }
+
+
+                    const output =
+                        await response.json();
+
+
+                    const species =
+                        output.prediction;
+
+
+                    /* Result text */
+
+                    resultSpecies.textContent =
+                        species;
+
+
+                    if (species === "Adelie") {
+
+                        resultDescription.textContent =
+                            "AI memprediksi penguin ini sebagai spesies Adelie.";
+
+                    }
+                    else if (species === "Chinstrap") {
+
+                        resultDescription.textContent =
+                            "AI memprediksi penguin ini sebagai spesies Chinstrap.";
+
+                    }
+                    else if (species === "Gentoo") {
+
+                        resultDescription.textContent =
+                            "AI memprediksi penguin ini sebagai spesies Gentoo.";
+
+                    }
+                    else {
+
+                        resultDescription.textContent =
+                            "Prediksi berhasil dilakukan.";
+
+                    }
+
+
+                    result.style.display =
+                        "block";
+
+
+                    /* Scroll result */
+
+                    setTimeout(() => {
+
+                        result.scrollIntoView({
+                            behavior: "smooth",
+                            block: "nearest"
+                        });
+
+                    }, 100);
+
+
+                }
+                catch (error) {
+
+                    resultSpecies.textContent =
+                        "Terjadi Kesalahan";
+
+                    resultDescription.textContent =
+                        "Tidak dapat terhubung dengan server Flask.";
+
+                    result.style.display =
+                        "block";
+
+                }
+                finally {
+
+                    button.disabled =
+                        false;
+
+                    buttonText.textContent =
+                        "🔍 Prediksi Spesies";
+
+                    loader.style.display =
+                        "none";
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+</html>
